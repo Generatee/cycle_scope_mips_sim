@@ -6,6 +6,7 @@ import Registers from '../components/Registers.vue'
 import StackView from '../components/StackView.vue'
 import MduPanel from '../components/MduPanel.vue'
 import SourcePanel from '../components/SourcePanel.vue'
+import MemoryPanel from '../components/MemoryPanel.vue'
 import { PROGRAMS } from '../programs'
 import {
   sim, view, version, SPEEDS, loadProgram, applyParams, reset, stepCycle, stepInstr, stepBack, run, stop, submitInput, cpu,
@@ -44,6 +45,22 @@ function onKey(e: KeyboardEvent) {
 onMounted(() => window.addEventListener('keydown', onKey))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 const showKeys = ref(false)
+const memOpen = ref(
+  (() => {
+    try {
+      return localStorage.getItem('cs-mem-open') !== '0'
+    } catch {
+      return true
+    }
+  })(),
+)
+watch(memOpen, (v) => {
+  try {
+    localStorage.setItem('cs-mem-open', v ? '1' : '0')
+  } catch {
+    /* ignore */
+  }
+})
 </script>
 
 <template>
@@ -89,6 +106,7 @@ const showKeys = ref(false)
           <option v-for="(sp, i) in SPEEDS" :key="i" :value="i">{{ sp.label }}</option>
         </select>
         <button class="text-[12px] text-brand font-medium px-1" @click="showKeys = !showKeys">⌨ คีย์ลัด</button>
+        <button class="text-[12px] text-brand font-medium px-1" @click="memOpen = !memOpen">{{ memOpen ? '▾ ซ่อน Memory' : '▸ แสดง Memory' }}</button>
       </div>
 
       <!-- status -->
@@ -106,7 +124,7 @@ const showKeys = ref(false)
     <div v-if="view.error" class="rounded-lg bg-err/10 text-err px-3 py-2 text-[13px]">{{ view.error }}</div>
 
     <!-- main grid -->
-    <div class="sim-grid grid gap-3 min-h-0 flex-1">
+    <div class="sim-grid grid gap-3 min-h-[460px] flex-1">
       <div class="panel p-3 min-h-0 flex flex-col">
         <SourcePanel />
         <div class="mt-3 border-t border-line pt-2">
@@ -150,6 +168,15 @@ const showKeys = ref(false)
           <StackView v-if="memTab !== 'mdu'" :mode="memTab" />
           <MduPanel v-else />
         </div>
+      </div>
+    </div>
+
+    <!-- memory strip -->
+    <div class="panel shrink-0" :class="memOpen ? 'p-3 h-[300px] min-h-[180px] max-h-[85vh] resize-y overflow-hidden' : 'px-3 py-2'" :title="memOpen ? 'ลากมุมขวาล่างเพื่อปรับความสูง' : ''">
+      <MemoryPanel v-if="memOpen" />
+      <div v-if="!memOpen" class="flex items-center gap-3">
+        <span class="panel-title">Memory</span>
+        <span class="text-[12.5px] text-muted">ดู memory ทั้งหมดแบบ hex + ASCII</span>
       </div>
     </div>
   </div>
